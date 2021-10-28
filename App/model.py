@@ -24,13 +24,13 @@
  * Dario Correal - Version inicial
  """
 
-
-import config as cf
+import config
 from DISClib.ADT import list as lt
-from DISClib.ADT import map as mp
+from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
-from DISClib.Algorithms.Sorting import shellsort as sa
-assert cf
+from DISClib.ADT import map as m
+import datetime
+assert config
 
 """
 Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
@@ -39,12 +39,232 @@ los mismos.
 
 # Construccion de modelos
 
+def newAnalyzer():
+    """ Inicializa el analizador
+
+    Crea una lista vacia para guardar todos los crimenes
+    Se crean indices (Maps) por los siguientes criterios:
+    -Fechas
+
+    Retorna el analizador inicializado.
+    """
+    analyzer = {'avistamientos': None,
+                'ciudades': None,
+                'duracion':None,
+                'fechas':None
+                }
+
+    analyzer['avistamientos'] = lt.newList('SINGLE_LINKED')
+    analyzer['fechas'] = om.newMap(omaptype='BTS',
+                                      comparefunction=compareFechas)
+    analyzer['ciudades'] = om.newMap(omaptype='BTS',
+                                      comparefunction=compareCiudades)
+    return analyzer
+
 # Funciones para agregar informacion al catalogo
+
+def addAvistamiento(analyzer, ufos):
+    """
+    """
+    lt.addLast(analyzer['avistamientos'], ufos)
+    updateCity(analyzer['ciudades'], ufos)
+    updateDateIndex(analyzer['fechas'], ufos)
+    return analyzer
+
+def updateCity(map, ufos):
+    """
+    Se toma la fecha del crimen y se busca si ya existe en el arbol
+    dicha fecha.  Si es asi, se adiciona a su lista de crimenes
+    y se actualiza el indice de tipos de crimenes.
+
+    Si no se encuentra creado un nodo para esa fecha en el arbol
+    se crea y se actualiza el indice de tipos de crimenes
+    """
+    city = ufos['city']
+    #crimedate = datetime.datetime.strptime(occurreddate, '%Y-%m-%d %H:%M:%S')
+    entry = om.get(map, city)
+    if entry is None:
+        datentry = newMapEntry(ufos,compareFechas)
+        om.put(map, city, datentry)
+    else:
+        datentry = me.getValue(entry)
+    addCiudad(datentry, ufos)
+    return map
+
+def updateDateIndex(map, ufos):
+    """
+    Se toma la fecha del crimen y se busca si ya existe en el arbol
+    dicha fecha.  Si es asi, se adiciona a su lista de crimenes
+    y se actualiza el indice de tipos de crimenes.
+
+    Si no se encuentra creado un nodo para esa fecha en el arbol
+    se crea y se actualiza el indice de tipos de crimenes
+    """
+    time = ufos['datetime']
+    date = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S') 
+    entry = om.get(map, date.date())
+    if entry is None:
+        datentry = newDataEntry(ufos)
+        om.put(map, date.date(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    lt.addLast((datentry)['lstavistamientos'],ufos)
+    return map
+
+def addCiudad(map, ufos):
+    """
+    Actualiza un indice de tipo de crimenes.  Este indice tiene una lista
+    de crimenes y una tabla de hash cuya llave es el tipo de crimen y
+    el valor es una lista con los crimenes de dicho tipo en la fecha que
+    se está consultando (dada por el nodo del arbol)
+    """
+    time = ufos['datetime']
+    date = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S') 
+    entry = om.get(map, date.date())
+    if entry is None:
+        datentry = newDataEntry(ufos)
+        om.put(map, date.date(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    lt.addLast((datentry)['lstavistamientos'],ufos)
+    return map
+    
+def newDataEntry(ufos):
+    """
+    Crea una entrada en el indice por fechas, es decir en el arbol
+    binario.
+    """
+    entry = {'date': None, 'lstavistamientos': None}
+    entry['date'] = ufos['datetime']
+    entry['lstavistamientos'] = lt.newList('SINGLE_LINKED', compareFechas)
+    return entry
+
+def newDictEntry(ufos,cadkey,cadvalue,namecol,comparar):
+    """
+    Crea un dict, con dos llaves: cadkey y cadvalue. El valor de cadkey es el atributo namecol del renglon leido
+    El valor cadvalue es una lista de los renglones asociados a cadkey.
+    """
+    entry = {cadkey: None, cadvalue: None}
+    entry[cadkey] = ufos[namecol]
+    entry[cadvalue] = lt.newList('SINGLE_LINKED', comparar)
+    return entry
+
+def newMapEntry(ufos,clasificacion):
+    entry = om.newMap(omaptype='BST', comparefunction=clasificacion)
+    return entry 
 
 # Funciones para creacion de datos
 
 # Funciones de consulta
 
+def ufosSize(analyzer):
+    """
+    Número de avistamientos y fechas 
+    """
+    #return lt.size(analyzer['avistamientos'])
+    return [lt.size(analyzer['avistamientos']),om.size(analyzer['fechas']),om.size(analyzer['ciudades'])]
+
+
+def indexHeight(analyzer):
+    """
+    Altura del arbol
+    """
+    return om.height(analyzer)
+
+
+def indexSize(analyzer):
+    """
+    Numero de elementos en el indice
+    """
+    return om.size(analyzer)
+
+
+def minKey(analyzer):
+    """
+    Llave mas pequena
+    """
+    return om.minKey(analyzer) 
+
+
+def maxKey(analyzer):
+    """
+    Llave mas grande
+    """
+    return om.maxKey(analyzer)
+
+def getAvistamientosByRange(analyzer, initialDate, finalDate):
+    """
+    Retorna el numero de crimenes en un rago de fechas.
+    """
+    lst = om.values(analyzer['fechas'], initialDate, finalDate)
+    totavistamientos = 0
+    for lstdate in lt.iterator(lst):
+        totavistamientos += lt.size(lstdate['lstavistamientos'])
+    return totavistamientos
+
+def getAvistamientosByRangeForPrint(analyzer, initialDate, finalDate):
+    """
+    Retorna los tres primeros y los tres ultimos avistamientos
+    """
+    Avist=lt.newList('SINGLE_LINKED', compareFechas)
+    lst = om.values(analyzer['fechas'], initialDate, finalDate)
+    totalvist = 0
+    for lstdate in lt.iterator(lst):
+        totalvist += lt.size(lstdate['lstavistamientos'])
+        for row in lt.iterator(lstdate["lstavistamientos"]):
+            lt.addLast(Avist,row)
+    if totalvist<7:
+        return Avist
+    else:
+        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-3,3))
+
+def getAvistamientosByRangeForPrint2(analyzer, initialDate, finalDate):
+    """
+    Retorna los tres primeros y los tres ultimos avistamientos
+    """
+    
+    Avist=lt.newList('SINGLE_LINKED', compareFechas)
+    lst = om.values(analyzer, initialDate, finalDate)
+    totalvist = 0
+    for lstdate in lt.iterator(lst):
+        totalvist += lt.size(lstdate['lstavistamientos'])
+        for row in lt.iterator(lstdate["lstavistamientos"]):
+            lt.addLast(Avist,row)
+    if totalvist<7:
+        return Avist
+    else:
+        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-3,3))
+
+def concatlist(lst1,lst2):
+    """
+    Recibe dos listas, agrega los elementos de la segunda lista al final de la primera y retorna dicha lista 
+    """
+    for elem in lt.iterator(lst2):
+        lt.addLast(lst1,elem)
+    return lst1
+
 # Funciones utilizadas para comparar elementos dentro de una lista
 
 # Funciones de ordenamiento
+
+def compareCiudades(ciudad1, ciudad2):
+    """
+    Compara dos ciudades
+    """
+    if (ciudad1 == ciudad2):
+        return 0
+    elif ciudad1 > ciudad2:
+        return 1
+    else:
+        return -1
+
+def compareFechas(date1, date2):
+    """
+    Compara dos fechas
+    """
+    if (date1 == date2):
+        return 0
+    elif (date1 > date2):
+        return 1
+    else:
+        return -1
