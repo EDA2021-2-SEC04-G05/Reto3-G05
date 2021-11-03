@@ -97,6 +97,31 @@ def getAvistamientosByRange(analyzer, initialDate, finalDate):
     return model.getAvistamientosByRange(analyzer, initialDate.date(),
                                   finalDate.date())
 
+def getAvistamientosByCity(analyzer, cityName,initialDate, finalDate):
+    """
+    Retorna el total de avistamientos en una ciudad
+    """
+    initialDate = datetime.datetime.strptime(initialDate, '%Y-%m-%d')
+    finalDate = datetime.datetime.strptime(finalDate, '%Y-%m-%d')
+    return model.getAvistamientosByCity(analyzer,cityName,initialDate.date(),
+                                  finalDate.date())
+
+def getAvistamientosByHHMM(analyzer, initialDate, finalDate):
+    """
+    Retorna el total de crimenes en un rango de fechas
+    """
+    initialDate = datetime.datetime.strptime(initialDate,'%H:%M')
+    finalDate = datetime.datetime.strptime(finalDate,'%H:%M' )
+    return model.getAvistamientosByHHMM(analyzer, initialDate.time(),
+                                  finalDate.time())
+
+def getAvistamientosByDuracion(analyzer,duracionmin,duracionmax):
+    """
+    Retorna el total de avistamientos en una ciudad
+    """
+    return model.getAvistamientosByDuracion(analyzer,duracionmin,
+                                  duracionmax)
+
 def getAvistamientosByRangeForPrint(analyzer, initialDate, finalDate):
     """
     Retorna el total de crimenes en un rango de fechas
@@ -114,3 +139,31 @@ def getAvistamientosByRangeForPrint2(analyzer, initialDate, finalDate):
     finalDate = datetime.datetime.strptime(finalDate, '%Y-%m-%d')
     return model.getAvistamientosByRangeForPrint2(analyzer, initialDate.date(),
                                   finalDate.date())
+
+def getAvistamientosByRangeForPrint3(analyzer, initialDate, finalDate):
+    """
+    Retorna el total de crimenes en un rango de fechas
+    """
+    initialDate = datetime.datetime.strptime(initialDate, '%Y-%m-%d')
+    finalDate = datetime.datetime.strptime(finalDate, '%Y-%m-%d')
+    return model.getAvistamientosByRangeForPrint3(analyzer, initialDate.date(),
+                                  finalDate.date())
+
+def getAvistamientosByRangeForPrint4(analyzer, minduracion, maxduracion):
+    """
+    Retorna el total de crimenes en un rango de fechas
+    """
+    return model.getAvistamientosByRangeForPrint4(analyzer, minduracion,
+                                  maxduracion)
+
+def getAvistamientosByRangeForPrint5(analyzer, minduracion, maxduracion):
+    """
+    Retorna el total de crimenes en un rango de fechas
+    """
+    minduracion = datetime.datetime.strptime('1999-08-06 ' + minduracion, '%Y-%m-%d %H:%M:%S') 
+    maxduracion = datetime.datetime.strptime('1999-08-06 ' + maxduracion, '%Y-%m-%d %H:%M:%S')
+    return model.getAvistamientosByRangeForPrint5(analyzer, minduracion.time(),
+                                  maxduracion.time())
+
+def concatlist(lst1,lst2):
+    return model.concatlist(lst1,lst2)

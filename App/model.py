@@ -51,7 +51,9 @@ def newAnalyzer():
     analyzer = {'avistamientos': None,
                 'ciudades': None,
                 'duracion':None,
-                'fechas':None
+                'fechas':None,
+                'HH:MM':None,
+                'zngeo':None
                 }
 
     analyzer['avistamientos'] = lt.newList('SINGLE_LINKED')
@@ -59,6 +61,12 @@ def newAnalyzer():
                                       comparefunction=compareFechas)
     analyzer['ciudades'] = om.newMap(omaptype='BTS',
                                       comparefunction=compareCiudades)
+    analyzer['duracion'] = om.newMap(omaptype='BTS',
+                                      comparefunction=compareDuracion) 
+    analyzer['HH:MM'] = om.newMap(omaptype='BTS',
+                                      comparefunction=compareHHMM)   
+    analyzer['zngeo'] = om.newMap(omaptype='BTS',
+                                      comparefunction=compareHHMM)   
     return analyzer
 
 # Funciones para agregar informacion al catalogo
@@ -69,6 +77,8 @@ def addAvistamiento(analyzer, ufos):
     lt.addLast(analyzer['avistamientos'], ufos)
     updateCity(analyzer['ciudades'], ufos)
     updateDateIndex(analyzer['fechas'], ufos)
+    updateDuracion(analyzer['duracion'], ufos)
+    updateHHMM(analyzer['HH:MM'], ufos)
     return analyzer
 
 def updateCity(map, ufos):
@@ -111,6 +121,46 @@ def updateDateIndex(map, ufos):
     lt.addLast((datentry)['lstavistamientos'],ufos)
     return map
 
+def updateHHMM(map, ufos):
+    """
+    Se toma la fecha del crimen y se busca si ya existe en el arbol
+    dicha fecha.  Si es asi, se adiciona a su lista de crimenes
+    y se actualiza el indice de tipos de crimenes.
+
+    Si no se encuentra creado un nodo para esa fecha en el arbol
+    se crea y se actualiza el indice de tipos de crimenes
+    """
+    time = ufos['datetime']
+    date = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S') 
+    entry = om.get(map, date.time())
+    if entry is None:
+        datentry = newMapEntry(ufos,compareFechas)
+        om.put(map, date.time(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    addHHMM(datentry,ufos)
+    return map
+
+def updateDuracion(map, ufos):
+    """
+    Se toma la fecha del crimen y se busca si ya existe en el arbol
+    dicha fecha.  Si es asi, se adiciona a su lista de crimenes
+    y se actualiza el indice de tipos de crimenes.
+
+    Si no se encuentra creado un nodo para esa fecha en el arbol
+    se crea y se actualiza el indice de tipos de crimenes
+    """
+    duracion = ufos['duration (seconds)']
+    #crimedate = datetime.datetime.strptime(occurreddate, '%Y-%m-%d %H:%M:%S')
+    entry = om.get(map, duracion)
+    if entry is None:
+        datentry = newMapEntry(ufos,compareCiudades)
+        om.put(map, duracion, datentry)
+    else:
+        datentry = me.getValue(entry)
+    addDuracion(datentry, ufos)
+    return map
+
 def addCiudad(map, ufos):
     """
     Actualiza un indice de tipo de crimenes.  Este indice tiene una lista
@@ -124,6 +174,41 @@ def addCiudad(map, ufos):
     if entry is None:
         datentry = newDataEntry(ufos)
         om.put(map, date.date(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    lt.addLast((datentry)['lstavistamientos'],ufos)
+    return map
+
+def addHHMM(map, ufos):
+    """
+    Actualiza un indice de tipo de crimenes.  Este indice tiene una lista
+    de crimenes y una tabla de hash cuya llave es el tipo de crimen y
+    el valor es una lista con los crimenes de dicho tipo en la fecha que
+    se está consultando (dada por el nodo del arbol)
+    """
+    time = ufos['datetime']
+    date = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S') 
+    entry = om.get(map, date.date())
+    if entry is None:
+        datentry = newDataEntry(ufos)
+        om.put(map, date.date(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    lt.addLast((datentry)['lstavistamientos'],ufos)
+    return map
+    
+def addDuracion(map, ufos):
+    """
+    Actualiza un indice de tipo de crimenes.  Este indice tiene una lista
+    de crimenes y una tabla de hash cuya llave es el tipo de crimen y
+    el valor es una lista con los crimenes de dicho tipo en la fecha que
+    se está consultando (dada por el nodo del arbol)
+    """
+    ciudad = ufos['city']
+    entry = om.get(map, ciudad)
+    if entry is None:
+        datentry = newDictEntry(ufos,'ciudad','lstavistamientos','city',compareCiudades)
+        om.put(map, ciudad, datentry)
     else:
         datentry = me.getValue(entry)
     lt.addLast((datentry)['lstavistamientos'],ufos)
@@ -162,7 +247,7 @@ def ufosSize(analyzer):
     Número de avistamientos y fechas 
     """
     #return lt.size(analyzer['avistamientos'])
-    return [lt.size(analyzer['avistamientos']),om.size(analyzer['fechas']),om.size(analyzer['ciudades'])]
+    return [lt.size(analyzer['avistamientos']),om.size(analyzer['fechas']),om.size(analyzer['ciudades']),om.size(analyzer['duracion']),om.size(analyzer['HH:MM'])]
 
 
 def indexHeight(analyzer):
@@ -202,6 +287,45 @@ def getAvistamientosByRange(analyzer, initialDate, finalDate):
         totavistamientos += lt.size(lstdate['lstavistamientos'])
     return totavistamientos
 
+def getAvistamientosByCity(analyzer, cityName,initialDate, finalDate):
+    """
+    Retorna el numero de avistamientos en una ciudad.
+    """
+    fechas = om.get(analyzer['ciudades'],cityName)
+    lst = om.values(fechas['value'], initialDate, finalDate)
+    totavistamientos = 0
+    for lstdate in lt.iterator(lst):
+        totavistamientos += lt.size(lstdate['lstavistamientos'])
+    return totavistamientos
+
+def getAvistamientosByDuracion(analyzer, duracionmin,duracionmax):
+    """
+    Retorna el numero de avistamientos en una ciudad.
+    """
+    lst = om.values(analyzer['duracion'], duracionmin,duracionmax)
+    totavistamientos = 0
+    for lstduracion in lt.iterator(lst):
+        min = om.minKey(lstduracion)
+        max = om.maxKey(lstduracion)
+        lst2 = om.values(lstduracion,min,max)
+        for lstciudad in lt.iterator(lst2):
+            totavistamientos += lt.size(lstciudad['lstavistamientos'])
+    return totavistamientos
+
+def getAvistamientosByHHMM(analyzer, HHMMinicial,HHMMfinal):
+    """
+    Retorna el numero de avistamientos en una ciudad.
+    """
+    lst = om.values(analyzer['HH:MM'], HHMMinicial,HHMMfinal)
+    totavistamientos = 0
+    for lstduracion in lt.iterator(lst):
+        min = om.minKey(lstduracion)
+        max = om.maxKey(lstduracion)
+        lst2 = om.values(lstduracion,min,max)
+        for lstciudad in lt.iterator(lst2):
+            totavistamientos += lt.size(lstciudad['lstavistamientos'])
+    return totavistamientos
+
 def getAvistamientosByRangeForPrint(analyzer, initialDate, finalDate):
     """
     Retorna los tres primeros y los tres ultimos avistamientos
@@ -216,7 +340,7 @@ def getAvistamientosByRangeForPrint(analyzer, initialDate, finalDate):
     if totalvist<7:
         return Avist
     else:
-        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-3,3))
+        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-2,3))
 
 def getAvistamientosByRangeForPrint2(analyzer, initialDate, finalDate):
     """
@@ -233,7 +357,55 @@ def getAvistamientosByRangeForPrint2(analyzer, initialDate, finalDate):
     if totalvist<7:
         return Avist
     else:
-        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-3,3))
+        return concatlist(lt.subList(Avist,1,3),lt.subList(Avist,totalvist-2,3))
+
+def getAvistamientosByRangeForPrint3(analyzer, initialDate, finalDate):
+    """
+    Retorna los tres primeros y los tres ultimos avistamientos
+    """
+    Avist=lt.newList('SINGLE_LINKED', compareFechas)
+    lst = om.values(analyzer['fechas'], initialDate, finalDate)
+    totalvist = 0
+    for lstdate in lt.iterator(lst):
+        totalvist += lt.size(lstdate['lstavistamientos'])
+        for row in lt.iterator(lstdate["lstavistamientos"]):
+            lt.addLast(Avist,row)
+    return Avist
+
+def getAvistamientosByRangeForPrint4(analyzer, minduracion, maxduracion):
+    """
+    Retorna los tres primeros y los tres ultimos avistamientos
+    """
+    Avist=lt.newList('SINGLE_LINKED')# compareCiudades)
+    lst = om.values(analyzer['duracion'], float(minduracion),float(maxduracion))
+    totalvist = 0
+    for lstdate in lt.iterator(lst):
+        min = om.minKey(lstdate)
+        max = om.maxKey(lstdate)
+        lst2 = om.values(lstdate,min,max)
+        for lstciudad in lt.iterator(lst2):
+            totalvist += lt.size(lstciudad['lstavistamientos'])
+            for row in lt.iterator(lstciudad["lstavistamientos"]):
+                lt.addLast(Avist,row)
+    return Avist
+
+def getAvistamientosByRangeForPrint5(analyzer, minduracion, maxduracion):
+    """
+    Retorna los tres primeros y los tres ultimos avistamientos
+    """
+    Avist=lt.newList('SINGLE_LINKED')# compareCiudades)
+    lst = om.values(analyzer['HH:MM'], minduracion,maxduracion)
+    totalvist = 0
+    for lstdate in lt.iterator(lst):
+        min = om.minKey(lstdate)
+        max = om.maxKey(lstdate)
+        lst2 = om.values(lstdate,min,max)
+        for lstciudad in lt.iterator(lst2):
+            totalvist += lt.size(lstciudad['lstavistamientos'])
+            for row in lt.iterator(lstciudad["lstavistamientos"]):
+                lt.addLast(Avist,row)
+    return Avist
+
 
 def concatlist(lst1,lst2):
     """
@@ -261,6 +433,28 @@ def compareCiudades(ciudad1, ciudad2):
 def compareFechas(date1, date2):
     """
     Compara dos fechas
+    """
+    if (date1 == date2):
+        return 0
+    elif (date1 > date2):
+        return 1
+    else:
+        return -1
+
+def compareDuracion(duracion1, duracion2):
+    """
+    Compara dos fechas
+    """
+    if (float(duracion1) == float(duracion2)):
+        return 0
+    elif (float(duracion1) > float(duracion2)):
+        return 1
+    else:
+        return -1
+
+def compareHHMM(date1, date2):
+    """
+    Compara dos HH:MM
     """
     if (date1 == date2):
         return 0

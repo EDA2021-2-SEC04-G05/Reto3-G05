@@ -21,7 +21,6 @@
  """
 
 import sys
-
 import prettytable
 import config
 from DISClib.DataStructures import orderedmapstructure as om
@@ -101,16 +100,41 @@ def printufosdate(avist):
     ancho=18
     #total=lt.size(analyzer["avistamientos"])
     #x.field_names = ["datetime","city","state","country","shape","duration (seconds)","duration (hours/min)","comments","date posted","latitude","longitude"]
-    x.field_names = ["datetime","city","country","shape","duration (seconds)"]
+    x.field_names = ["datetime","city","state","country","shape","duration (seconds)"]
     for evento in lt.iterator(avist):
-            row= [evento["datetime"],evento["city"],evento["country"],evento["shape"],evento["duration (seconds)"]]
+            row= [evento["datetime"],evento["city"],evento["state"],evento["country"],evento["shape"],evento["duration (seconds)"]]
             adjrow=[]
             for elem in row:
                 adjrow.append(salto(elem,ancho))
             x.add_row(adjrow) 
     print(x)
 
+def printInitial(analyzer):
+    initialDate0 = str(controller.minKey(analyzer['fechas'])) 
+    total6 = controller.getAvistamientosByRangeForPrint3(analyzer, initialDate0, initialDate0)
+    x = PrettyTable()
+    x.field_names = ["date","count"]
+    fila = [initialDate0,str(lt.size(total6))]
+    x.add_row(fila)
+    print(x)
 
+def printInitial2(analyzer):
+    maxduracion = str(controller.maxKey(analyzer['duracion'])) 
+    total6 = controller.getAvistamientosByRangeForPrint4(analyzer, maxduracion, maxduracion)
+    x = PrettyTable()
+    x.field_names = ["duration (seconds)","count"]
+    fila = [maxduracion,str(lt.size(total6))]
+    x.add_row(fila)
+    print(x)
+
+def printInitial3(analyzer):
+    maxduracion = str(controller.maxKey(analyzer['HH:MM'])) 
+    total6 = controller.getAvistamientosByRangeForPrint5(analyzer, maxduracion, maxduracion)
+    x = PrettyTable()
+    x.field_names = ["time","count"]
+    fila = [maxduracion,str(lt.size(total6))]
+    x.add_row(fila)
+    print(x)
 
 """
 Menu principal
@@ -136,10 +160,39 @@ while True:
         finalDate = str(controller.maxKey(fechas['value']))
         #print('Menor Llave: ' + str(controller.minKey(fechas['value'])))
         #print('Mayor Llave: ' + str(controller.maxKey(fechas['value'])))
+        ciudades = controller.getAvistamientosByCity(cont,ciudad,initialDate, finalDate)
+        print('Hay ' + str(ciudades) + ' en la ciudad de ' + ciudad)
         map = fechas['value']
         total6 = controller.getAvistamientosByRangeForPrint2(map, initialDate, finalDate)
         printufosdate(total6)
 
+    elif int(inputs[0]) == 2:
+        print("\nBuscando avistamientos en el rango de duración: ")
+        duracionmin = input("Ingrese la duración minima en segundos: ")
+        duracionmax = input("Ingrese la duración maxima en segundos: ")
+        duracion = controller.getAvistamientosByDuracion(cont,duracionmin,duracionmax)
+        totalavistamientos = controller.getAvistamientosByRangeForPrint4(cont, duracionmin, duracionmax)
+        print('Hay ' + str(om.size(cont['duracion'])) + ' diferentes duraciones en los avistamientos')
+        print('El avistamiento mas largo es: ')
+        printInitial2(cont)
+        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre ' + duracionmin + ' y ' + duracionmax + ' segundos' )
+        print('Los primeros 3 y ultimos 3 avistamientos en la duración dada son: ')
+        total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
+        printufosdate(total6)
+
+    elif int(inputs[0]) == 3:
+        print("\nBuscando avistamientos en el rango de horas dadas: ")
+        duracionmin = input("Ingrese el tiempo inicial de observación en formato HH:MM :  ")
+        duracionmax = input("Ingrese el tiempo final de observación en formato HH:MM :  ")
+        duracion = controller.getAvistamientosByHHMM(cont,duracionmin,duracionmax)
+        totalavistamientos = controller.getAvistamientosByRangeForPrint5(cont, duracionmin + ':00', duracionmax + ':00')
+        print('Hay ' + str(om.size(cont['duracion'])) + ' horas y minutos distintos de avistamientos')
+        print('El avistamiento mas tardido es: ')
+        printInitial3(cont)
+        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las ' + duracionmin + ' y las ' + duracionmax)
+        print('Los primeros 3 y ultimos 3 avistamientos en el rango dado son: ')
+        total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
+        printufosdate(total6)
 
     elif int(inputs[0]) == 4:
         print("\nBuscando avistamientos en un rango de fechas: ")
@@ -147,7 +200,10 @@ while True:
         finalDate = input("Fecha Final (YYYY-MM-DD): ")
         total = controller.getAvistamientosByRange(cont, initialDate, finalDate)
         total6 = controller.getAvistamientosByRangeForPrint(cont, initialDate, finalDate)
-        print("\nTotal de avistamientos en el rango de fechas: " + str(total))
+        print('Hay ' + str(om.size(cont['fechas'])) + ' avistamientos con fechas distintas. ')
+        print('El avistamiento mas antiguo es: ')
+        printInitial(cont)
+        print("\nTotal de avistamientos en el rango de fechas: " + str(total)) 
         printufosdate(total6)
 
     else:
