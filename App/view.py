@@ -156,7 +156,7 @@ while True:
         print('Altura del arbol: ' + str(controller.indexHeight(cont['ciudades'])))
         print('Elementos en el arbol: ' + str(controller.indexSize(cont['ciudades'])))
         fechas = om.get(cont['ciudades'],ciudad)
-        initialDate = str(controller.minKey(fechas['value']))
+        initialDate = str(controller.minKey(fechas['value'])) 
         finalDate = str(controller.maxKey(fechas['value']))
         #print('Menor Llave: ' + str(controller.minKey(fechas['value'])))
         #print('Mayor Llave: ' + str(controller.maxKey(fechas['value'])))
@@ -177,7 +177,10 @@ while True:
         printInitial2(cont)
         print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre ' + duracionmin + ' y ' + duracionmax + ' segundos' )
         print('Los primeros 3 y ultimos 3 avistamientos en la duración dada son: ')
-        total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
+        if lt.size(totalavistamientos) < 7:
+            total6 = totalavistamientos
+        else:
+            total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
         printufosdate(total6)
 
     elif int(inputs[0]) == 3:
@@ -191,7 +194,10 @@ while True:
         printInitial3(cont)
         print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las ' + duracionmin + ' y las ' + duracionmax)
         print('Los primeros 3 y ultimos 3 avistamientos en el rango dado son: ')
-        total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
+        if lt.size(totalavistamientos) < 7:
+            total6 = totalavistamientos
+        else:
+            total6 = controller.concatlist(lt.subList(totalavistamientos,1,3),lt.subList(totalavistamientos,lt.size(totalavistamientos)-2,3))
         printufosdate(total6)
 
     elif int(inputs[0]) == 4:
@@ -204,6 +210,31 @@ while True:
         print('El avistamiento mas antiguo es: ')
         printInitial(cont)
         print("\nTotal de avistamientos en el rango de fechas: " + str(total)) 
+        printufosdate(total6)
+
+    elif int(inputs[0]) == 5:
+        print("\nBuscando avistamientos en una zona geográfica: ")
+        latitudemin = input("Ingrese la latitud minima con dos cifras decimales: ")
+        latitudemax = input("Ingrese la latitud maxima con dos cifras decimales : ")
+        while float(latitudemin) > float(latitudemax):
+            print('Error en el rango de latitudes, asegurese de poner el valor min al inicio')
+            latitudemin = input("Ingrese la latitud minima con dos cifras decimales: ")
+            latitudemax = input("Ingrese la latitud maxima con dos cifras decimales : ")
+        longitudemin = input("Ingrese la longitud minima con dos cifras decimales: ")
+        longitudemax = input("Ingrese la longitud maxima con dos cifras decimales: ")
+        while float(longitudemin) > float(longitudemax):
+            print('Error en el rango de longitudes, asegurese de poner el valor min al inicio')
+            longitudemin = input("Ingrese la longitud minima con dos cifras decimales: ")
+            longitudemax = input("Ingrese la longitud maxima con dos cifras decimales : ")
+        rango = controller.getAvistamientosByZnGeo(cont,longitudemin,longitudemax,latitudemin,latitudemax,)
+        totalavistamientos = controller.getAvistamientosByRangeForPrint6(cont,longitudemin,longitudemax,latitudemin,latitudemax )
+        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las latitudes ' + latitudemin + ' - ' + latitudemax) 
+        print('y las longitudes ' + longitudemin + ' - ' + longitudemax) 
+        print('Los primeros 5 y ultimos 5 avistamientos en la duración dada son: ')
+        if lt.size(totalavistamientos) < 11:
+            total6 = totalavistamientos
+        else:
+            total6 = controller.concatlist(lt.subList(totalavistamientos,1,5),lt.subList(totalavistamientos,lt.size(totalavistamientos)-4,5))
         printufosdate(total6)
 
     else:

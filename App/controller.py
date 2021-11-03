@@ -122,6 +122,12 @@ def getAvistamientosByDuracion(analyzer,duracionmin,duracionmax):
     return model.getAvistamientosByDuracion(analyzer,duracionmin,
                                   duracionmax)
 
+def getAvistamientosByZnGeo(analyzer,longitudemin,longitudenmax,latitudemin,latitudemax):
+    """
+    Retorna el total de avistamientos en una ciudad
+    """
+    return model.getAvistamientosByZnGeo(analyzer,longitudemin,longitudenmax,latitudemin,latitudemax)
+
 def getAvistamientosByRangeForPrint(analyzer, initialDate, finalDate):
     """
     Retorna el total de crimenes en un rango de fechas
@@ -164,6 +170,12 @@ def getAvistamientosByRangeForPrint5(analyzer, minduracion, maxduracion):
     maxduracion = datetime.datetime.strptime('1999-08-06 ' + maxduracion, '%Y-%m-%d %H:%M:%S')
     return model.getAvistamientosByRangeForPrint5(analyzer, minduracion.time(),
                                   maxduracion.time())
+
+def getAvistamientosByRangeForPrint6(analyzer,longitudemin,longitudenmax,latitudemin,latitudemax):
+    """
+    Retorna el total de crimenes en un rango de fechas
+    """
+    return model.getAvistamientosByRangeForPrint6(analyzer,longitudemin,longitudenmax,latitudemin,latitudemax)
 
 def concatlist(lst1,lst2):
     return model.concatlist(lst1,lst2)
