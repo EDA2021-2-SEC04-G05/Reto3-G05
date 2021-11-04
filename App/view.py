@@ -136,6 +136,25 @@ def printInitial3(analyzer):
     x.add_row(fila)
     print(x)
 
+def printmaxcity(analyzer):
+    lista = om.keySet(analyzer['ciudades'])
+    maxavista = 0
+    maxcity = ''
+    for city in lt.iterator(lista):
+        map = om.get(analyzer['ciudades'],city)['value']
+        initialDate = str(om.minKey(map))
+        finalDate = str(om.maxKey(map))
+        ciudades = controller.getAvistamientosByCity(analyzer,city,initialDate, finalDate)
+        if ciudades > maxavista:
+            maxavista = ciudades
+            maxcity = city 
+    print('La ciudad con mas avistamientos reportados es: ')
+    x = PrettyTable()
+    x.field_names = ["city","count"]
+    fila = [maxcity,str(maxavista)]
+    x.add_row(fila)
+    print(x)
+
 """
 Menu principal
 """
@@ -155,15 +174,18 @@ while True:
         #print('Crimenes cargados: ' + str(controller.ufosSize(cont)))
         print('Altura del arbol: ' + str(controller.indexHeight(cont['ciudades'])))
         print('Elementos en el arbol: ' + str(controller.indexSize(cont['ciudades'])))
+        print('Hay ' + str(controller.indexSize(cont['ciudades'])) + ' donde se han presentando avistamientos')
+        printmaxcity(cont)
         fechas = om.get(cont['ciudades'],ciudad)
         initialDate = str(controller.minKey(fechas['value'])) 
         finalDate = str(controller.maxKey(fechas['value']))
         #print('Menor Llave: ' + str(controller.minKey(fechas['value'])))
         #print('Mayor Llave: ' + str(controller.maxKey(fechas['value'])))
         ciudades = controller.getAvistamientosByCity(cont,ciudad,initialDate, finalDate)
-        print('Hay ' + str(ciudades) + ' en la ciudad de ' + ciudad)
+        print('Hay ' + str(ciudades) + ' avistamientos en la ciudad de ' + ciudad)
         map = fechas['value']
         total6 = controller.getAvistamientosByRangeForPrint2(map, initialDate, finalDate)
+        print('Los 3 primeros y 3 ultimos avistamientos son: ')
         printufosdate(total6)
 
     elif int(inputs[0]) == 2:
@@ -190,6 +212,7 @@ while True:
         duracion = controller.getAvistamientosByHHMM(cont,duracionmin,duracionmax)
         totalavistamientos = controller.getAvistamientosByRangeForPrint5(cont, duracionmin + ':00', duracionmax + ':00')
         print('Hay ' + str(om.size(cont['duracion'])) + ' horas y minutos distintos de avistamientos')
+        print(lt.size(om.keySet(cont['duracion'])))
         print('El avistamiento mas tardido es: ')
         printInitial3(cont)
         print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las ' + duracionmin + ' y las ' + duracionmax)
@@ -210,6 +233,7 @@ while True:
         print('El avistamiento mas antiguo es: ')
         printInitial(cont)
         print("\nTotal de avistamientos en el rango de fechas: " + str(total)) 
+        print('Los 3 primeros y 3 ultimos avistamientos son: ')
         printufosdate(total6)
 
     elif int(inputs[0]) == 5:
@@ -228,8 +252,8 @@ while True:
             longitudemax = input("Ingrese la longitud maxima con dos cifras decimales : ")
         rango = controller.getAvistamientosByZnGeo(cont,longitudemin,longitudemax,latitudemin,latitudemax,)
         totalavistamientos = controller.getAvistamientosByRangeForPrint6(cont,longitudemin,longitudemax,latitudemin,latitudemax )
-        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las latitudes ' + latitudemin + ' - ' + latitudemax) 
-        print('y las longitudes ' + longitudemin + ' - ' + longitudemax) 
+        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las latitudes desde ' + latitudemin + ' hasta ' + latitudemax) 
+        print('y las longitudes desde ' + longitudemin + ' hasta ' + longitudemax) 
         print('Los primeros 5 y ultimos 5 avistamientos en la duración dada son: ')
         if lt.size(totalavistamientos) < 11:
             total6 = totalavistamientos
