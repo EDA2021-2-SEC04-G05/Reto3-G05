@@ -23,6 +23,8 @@
 import sys
 import prettytable
 import config
+import folium
+from flask import Flask
 from DISClib.DataStructures import orderedmapstructure as om
 from DISClib.ADT import list as lt
 from App import controller
@@ -155,6 +157,45 @@ def printmaxcity(analyzer):
     x.add_row(fila)
     print(x)
 
+def printmap(centro,lista,listap):
+    app = Flask(__name__)
+    @app.route('/')
+
+    def index():
+        start_coords = (centro)
+        folium_map = folium.Map(location=start_coords,
+                            tiles="Stamen Terrain",
+                            #min_lot=-109.05,
+                            #max_lot=-103.00,
+                            #min_lat=31.33,
+                            #max_lat=37.00,
+                            #max_bounds=True,
+                            zoom_start = 9,
+                            #max_zoom = 5,
+                            #min_zoom =4,
+                            width = '100%',
+                            height = '100%') 
+                            #zoom_control=False)
+        for i in lt.iterator(lista):
+            folium.Marker([float(i['latitude']),float(i['longitude'])],popup='<i>' + i['comments'] + '</i>').add_to(folium_map)
+            folium.PolyLine(listap,color='red').add_to(folium_map)
+        return folium_map._repr_html_()
+
+
+    """"
+    tooltip = "Click me!"
+
+    folium.Marker(
+    [45.3288, -121.6625], popup="<i>Mt. Hood Meadows</i>", tooltip=tooltip
+    ).add_to(folium_map)
+    folium.Marker(
+    [45.3311, -121.7113], popup="<b>Timberline Lodge</b>", tooltip=tooltip
+    ).add_to(folium_map)
+    """
+    if __name__ == '__main__':
+        app.run() 
+
+
 """
 Menu principal
 """
@@ -260,6 +301,36 @@ while True:
         else:
             total6 = controller.concatlist(lt.subList(totalavistamientos,1,5),lt.subList(totalavistamientos,lt.size(totalavistamientos)-4,5))
         printufosdate(total6)
+
+    elif int(inputs[0]) == 6:
+        print("\nBuscando avistamientos en una zona geográfica: ")
+        latitudemin = input("Ingrese la latitud minima con dos cifras decimales: ")
+        latitudemax = input("Ingrese la latitud maxima con dos cifras decimales : ")
+        while float(latitudemin) > float(latitudemax):
+            print('Error en el rango de latitudes, asegurese de poner el valor min al inicio')
+            latitudemin = input("Ingrese la latitud minima con dos cifras decimales: ")
+            latitudemax = input("Ingrese la latitud maxima con dos cifras decimales : ")
+        longitudemin = input("Ingrese la longitud minima con dos cifras decimales: ")
+        longitudemax = input("Ingrese la longitud maxima con dos cifras decimales: ")
+        while float(longitudemin) > float(longitudemax):
+            print('Error en el rango de longitudes, asegurese de poner el valor min al inicio')
+            longitudemin = input("Ingrese la longitud minima con dos cifras decimales: ")
+            longitudemax = input("Ingrese la longitud maxima con dos cifras decimales : ")
+        rango = controller.getAvistamientosByZnGeo(cont,longitudemin,longitudemax,latitudemin,latitudemax,)
+        totalavistamientos = controller.getAvistamientosByRangeForPrint6(cont,longitudemin,longitudemax,latitudemin,latitudemax )
+        print('Hay ' + str(lt.size(totalavistamientos)) + ' avistamientos entre las latitudes desde ' + latitudemin + ' hasta ' + latitudemax) 
+        print('y las longitudes desde ' + longitudemin + ' hasta ' + longitudemax) 
+        print('Los primeros 5 y ultimos 5 avistamientos en la duración dada son: ')
+        if lt.size(totalavistamientos) < 11:
+            total6 = totalavistamientos
+        else:
+            total6 = controller.concatlist(lt.subList(totalavistamientos,1,5),lt.subList(totalavistamientos,lt.size(totalavistamientos)-4,5))
+        printufosdate(total6)
+
+        centro = ((float(latitudemin) + float(latitudemax))/2,(float(longitudemin) + float(longitudemax))/2)
+        print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
+        cuadrante = [(float(latitudemin),float(longitudemin)),(float(latitudemin),float(longitudemax)),(float(latitudemax),float(longitudemax)),(float(latitudemax),float(longitudemin)),(float(latitudemin),float(longitudemin))]
+        printmap(centro,totalavistamientos,cuadrante)
 
     else:
         sys.exit(0)

@@ -475,24 +475,6 @@ def getAvistamientosByRangeForPrint6(analyzer,longitudemin,longitudenmax,latitud
                 lt.addLast(Avist,row)
     return Avist
 
-    """
-    Retorna los tres primeros y los tres ultimos avistamientos
-    """
-    Avist=lt.newList('SINGLE_LINKED')# compareCiudades)
-    lst = om.values(analyzer['HH:MM'], minduracion,maxduracion)
-    totalvist = 0
-    for lstdate in lt.iterator(lst):
-        min = om.minKey(lstdate)
-        max = om.maxKey(lstdate)
-        lst2 = om.values(lstdate,min,max)
-        for lstciudad in lt.iterator(lst2):
-            totalvist += lt.size(lstciudad['lstavistamientos'])
-            for row in lt.iterator(lstciudad["lstavistamientos"]):
-                lt.addLast(Avist,row)
-    return Avist
-
-
-
 def concatlist(lst1,lst2):
     """
     Recibe dos listas, agrega los elementos de la segunda lista al final de la primera y retorna dicha lista 
